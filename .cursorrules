@@ -1,0 +1,1 @@
+- gdy chcesz wprowadzic zmiany w bazie danych nie próbuj się z nią połączyć przez terminal, tylko podaj kod sql który ja wstawię do supabase.
