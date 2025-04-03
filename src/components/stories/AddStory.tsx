@@ -32,20 +32,44 @@ export const AddStory: React.FC<AddStoryProps> = ({ isOpen, onClose, onStoryAdde
 
     setIsLoading(true)
     try {
-      const expiresAt = new Date()
-      expiresAt.setHours(expiresAt.getHours() + 24)
+      // Przygotowanie daty wygaśnięcia - 24h od teraz
+      const expiresAt = new Date();
+      expiresAt.setHours(expiresAt.getHours() + 24);
 
-      const { error } = await supabase
+      // Sprawdzamy czy użytkownik już ma notatkę
+      const { data: existingStories, error: checkError } = await supabase
         .from('stories')
-        .insert([
-          {
-            user_id: user.id,
-            content: content.trim(),
-            expires_at: expiresAt.toISOString()
-          }
-        ])
+        .select('id')
+        .eq('user_id', user.id);
 
-      if (error) throw error
+      if (checkError) {
+        throw checkError;
+      }
+
+      // Jeśli użytkownik ma już jakieś notatki, usuń je wszystkie
+      if (existingStories && existingStories.length > 0) {
+        const { error: deleteError } = await supabase
+          .from('stories')
+          .delete()
+          .eq('user_id', user.id);
+
+        if (deleteError) {
+          throw deleteError;
+        }
+      }
+
+      // Teraz dodaj nową notatkę
+      const { error: insertError } = await supabase
+        .from('stories')
+        .insert({
+          user_id: user.id,
+          content: content.trim(),
+          expires_at: expiresAt.toISOString()
+        });
+
+      if (insertError) {
+        throw insertError;
+      }
 
       toast({
         title: 'Notatka dodana!',
